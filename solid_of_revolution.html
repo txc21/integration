@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الحجوم الدورانية - V = ∫πy² dx</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --panel: #0f1628;
+    --border: #1e2d4a;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --gold: #ffd166;
+    --text: #e8f4fd;
+    --muted: #6b8cad;
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Amiri', serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* Starfield background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      radial-gradient(1px 1px at 20% 30%, rgba(0,212,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 10%, rgba(255,107,53,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 80%, rgba(255,209,102,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 60%, rgba(0,212,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 50%, rgba(255,107,53,0.2) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    text-align: center;
+    padding: 2rem 1rem 1rem;
+    position: relative;
+    z-index: 1;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%);
+  }
+
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 0.05em;
+  }
+
+  .formula-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    color: var(--gold);
+    margin-top: 0.5rem;
+    opacity: 0.9;
+  }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* LEFT PANEL */
+  .controls {
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    overflow-y: auto;
+  }
+
+  .section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  label {
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  input[type="text"], input[type="number"] {
+    background: rgba(0,212,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 0.6rem 0.8rem;
+    font-size: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    width: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    direction: ltr;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+  }
+
+  .bounds-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+  }
+
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .preset-btn {
+    background: rgba(0,212,255,0.08);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--accent);
+    padding: 0.3rem 0.8rem;
+    font-size: 0.78rem;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+    direction: ltr;
+  }
+
+  .preset-btn:hover {
+    background: rgba(0,212,255,0.2);
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+  }
+
+  .draw-btn {
+    background: linear-gradient(135deg, var(--accent), #0088cc);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    padding: 0.8rem;
+    font-size: 1.1rem;
+    font-family: 'Amiri', serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(0,212,255,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .draw-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0,212,255,0.5);
+  }
+
+  .draw-btn:active { transform: translateY(0); }
+
+  .result-box {
+    background: rgba(255,209,102,0.08);
+    border: 1px solid rgba(255,209,102,0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .result-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .result-value {
+    font-size: 1.5rem;
+    color: var(--gold);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    margin-top: 0.3rem;
+  }
+
+  .error-msg {
+    color: #ff4d4d;
+    font-size: 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(255,77,77,0.1);
+    border: 1px solid rgba(255,77,77,0.3);
+    border-radius: 6px;
+    padding: 0.6rem;
+    display: none;
+  }
+
+  /* CANVAS AREA */
+  .canvas-area {
+    position: relative;
+    background: radial-gradient(ellipse at center, #0d1829 0%, var(--bg) 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  canvas {
+    display: block;
+    cursor: grab;
+  }
+
+  canvas:active { cursor: grabbing; }
+
+  .canvas-hint {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .axis-labels {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+  }
+
+  .axis-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* Sliders */
+  .slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent);
+    height: 4px;
+  }
+
+  .slider-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--accent);
+    min-width: 35px;
+    text-align: right;
+  }
+
+  .color-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .color-opt {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .color-opt:hover, .color-opt.active {
+    border-color: white;
+    transform: scale(1.2);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>الحجوم الدورانية ثلاثية الأبعاد</h1>
+  <div class="formula-display">V = ∫ₐᵇ π·[f(x)]² dx</div>
+</header>
+
+<main>
+  <!-- Controls Panel -->
+  <div class="controls">
+
+    <div>
+      <div class="section-title">▸ الدالة f(x)</div>
+      <div class="field-group">
+        <label>أدخل f(x)</label>
+        <input type="text" id="funcInput" value="sqrt(x)" placeholder="مثال: x^2, sin(x), sqrt(x)" dir="ltr">
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">▸ حدود التكامل</div>
+      <div class="bounds-row">
+        <div class="field-group">
+          <label>a (الحد الأدنى)</label>
+          <input type="number" id="aInput" value="0" step="0.1">
+        </div>
+        <div class="field-group">
+          <label>b (الحد الأعلى)</label>
+          <input type="number" id="bInput" value="4" step="0.1">
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">▸ أمثلة جاهزة</div>
+      <div class="presets">
+        <button class="preset-btn" onclick="setPreset('sqrt(x)', 0, 4)">√x [0,4]</button>
+        <button class="preset-btn" onclick="setPreset('x^2', 0, 2)">x² [0,2]</button>
+        <button class="preset-btn" onclick="setPreset('sin(x)', 0, 3.14159)">sin(x) [0,π]</button>
+        <button class="preset-btn" onclick="setPreset('x', 0, 3)">x [0,3]</button>
+        <button class="preset-btn" onclick="setPreset('2-x^2/2', -2, 2)">2-x²/2</button>
+        <button class="preset-btn" onclick="setPreset('exp(-x)', 0, 3)">e^(-x)</button>
+        <button class="preset-btn" onclick="setPreset('1/x', 1, 4)">1/x [1,4]</button>
+        <button class="preset-btn" onclick="setPreset('cos(x)', 0, 1.5708)">cos(x)</button>
+      </div>
+    </div>
+
+    <div class="error-msg" id="errorMsg">⚠ خطأ في الدالة</div>
+
+    <button class="draw-btn" onclick="drawSolid()">🔄 ارسم الحجم الدوراني</button>
+
+    <div class="result-box">
+      <div class="result-label">حجم المجسم الدوراني</div>
+      <div class="result-value" id="volumeResult">V = —</div>
+    </div>
+
+    <div>
+      <div class="section-title">▸ إعدادات العرض</div>
+      <div class="slider-group">
+        <label>الشفافية</label>
+        <div class="slider-row">
+          <input type="range" id="alphaSlider" min="0.1" max="1" step="0.05" value="0.75" oninput="updateAlpha(this.value)">
+          <span class="slider-val" id="alphaVal">0.75</span>
+        </div>
+        <label>عدد الشرائح</label>
+        <div class="slider-row">
+          <input type="range" id="slicesSlider" min="20" max="120" step="10" value="60" oninput="updateSlices(this.value)">
+          <span class="slider-val" id="slicesVal">60</span>
+        </div>
+      </div>
+
+      <label style="margin-top:0.8rem; display:block; margin-bottom:0.4rem">لون المجسم</label>
+      <div class="color-row">
+        <div class="color-opt active" style="background:linear-gradient(#00d4ff,#0055aa)" onclick="setColor('#00d4ff','#0055aa',this)"></div>
+        <div class="color-opt" style="background:linear-gradient(#ff6b35,#cc2200)" onclick="setColor('#ff6b35','#cc2200',this)"></div>
+        <div class="color-opt" style="background:linear-gradient(#7fff00,#2d8000)" onclick="setColor('#7fff00','#2d8000',this)"></div>
+        <div class="color-opt" style="background:linear-gradient(#ffd166,#cc7700)" onclick="setColor('#ffd166','#cc7700',this)"></div>
+        <div class="color-opt" style="background:linear-gradient(#cc44ff,#6600aa)" onclick="setColor('#cc44ff','#6600aa',this)"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-area">
+    <canvas id="c3d"></canvas>
+    <div class="canvas-hint">🖱 اسحب للتدوير | عجلة الماوس للتكبير</div>
+    <div class="axis-labels">
+      <div class="axis-label"><div class="dot" style="background:#ff4444"></div> محور x</div>
+      <div class="axis-label"><div class="dot" style="background:#44ff44"></div> محور y</div>
+      <div class="axis-label"><div class="dot" style="background:#4444ff"></div> محور z</div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ==================== Math Parser ====================
+function parseFunc(expr) {
+  let e = expr.trim()
+    .replace(/\^/g, '**')
+    .replace(/sqrt\(/g, 'Math.sqrt(')
+    .replace(/sin\(/g, 'Math.sin(')
+    .replace(/cos\(/g, 'Math.cos(')
+    .replace(/tan\(/g, 'Math.tan(')
+    .replace(/exp\(/g, 'Math.exp(')
+    .replace(/log\(/g, 'Math.log(')
+    .replace(/abs\(/g, 'Math.abs(')
+    .replace(/pi/gi, 'Math.PI')
+    .replace(/\be\b/g, 'Math.E');
+  return new Function('x', `"use strict"; try { return ${e}; } catch(e) { return NaN; }`);
+}
+
+// ==================== Numerical Integration ====================
+function integrate(f, a, b, n=1000) {
+  const h = (b - a) / n;
+  let sum = 0;
+  for (let i = 0; i <= n; i++) {
+    const x = a + i * h;
+    const y = f(x);
+    if (isNaN(y)) continue;
+    const w = (i === 0 || i === n) ? 1 : (i % 2 === 0 ? 2 : 4);
+    sum += w * y * y;
+  }
+  return Math.PI * (h / 3) * sum;
+}
+
+// ==================== 3D Engine ====================
+const canvas = document.getElementById('c3d');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+let rotX = 0.4, rotY = -0.6;
+let scale = 1;
+let isDragging = false, lastMX, lastMY;
+let colorTop = '#00d4ff', colorBot = '#0055aa';
+let alpha = 0.75, slices = 60;
+let currentPoints = [];
+
+function resize() {
+  const area = canvas.parentElement;
+  W = canvas.width = area.clientWidth;
+  H = canvas.height = area.clientHeight;
+  render();
+}
+window.addEventListener('resize', resize);
+
+// Mouse drag
+canvas.addEventListener('mousedown', e => { isDragging=true; lastMX=e.clientX; lastMY=e.clientY; });
+window.addEventListener('mouseup', () => isDragging=false);
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  rotY += (e.clientX - lastMX) * 0.01;
+  rotX += (e.clientY - lastMY) * 0.01;
+  lastMX=e.clientX; lastMY=e.clientY;
+  render();
+});
+canvas.addEventListener('wheel', e => {
+  scale *= e.deltaY > 0 ? 0.9 : 1.1;
+  scale = Math.min(Math.max(scale, 0.3), 5);
+  render();
+});
+
+// Touch support
+canvas.addEventListener('touchstart', e => { isDragging=true; lastMX=e.touches[0].clientX; lastMY=e.touches[0].clientY; e.preventDefault(); }, {passive:false});
+canvas.addEventListener('touchend', () => isDragging=false);
+canvas.addEventListener('touchmove', e => {
+  if (!isDragging) return;
+  rotY += (e.touches[0].clientX - lastMX) * 0.012;
+  rotX += (e.touches[0].clientY - lastMY) * 0.012;
+  lastMX=e.touches[0].clientX; lastMY=e.touches[0].clientY;
+  render(); e.preventDefault();
+}, {passive:false});
+
+// 3D projection
+function project(x, y, z) {
+  // Rotate around Y axis
+  const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+  const x1 = x * cosY - z * sinY;
+  const z1 = x * sinY + z * cosY;
+  // Rotate around X axis
+  const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+  const y2 = y * cosX - z1 * sinX;
+  const z2 = y * sinX + z1 * cosX;
+  // Perspective
+  const fov = 600;
+  const dist = fov / (fov + z2 + 200);
+  return {
+    sx: W/2 + x1 * scale * dist * 120,
+    sy: H/2 - y2 * scale * dist * 120,
+    depth: z2
+  };
+}
+
+// Hex to RGB
+function hexRGB(h) {
+  const r = parseInt(h.slice(1,3),16);
+  const g = parseInt(h.slice(3,5),16);
+  const b = parseInt(h.slice(5,7),16);
+  return {r,g,b};
+}
+
+function lerpColor(c1, c2, t) {
+  return `rgba(${Math.round(c1.r+(c2.r-c1.r)*t)},${Math.round(c1.g+(c2.g-c1.g)*t)},${Math.round(c1.b+(c2.b-c1.b)*t)},${alpha})`;
+}
+
+function render() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw axes
+  drawAxes();
+
+  if (currentPoints.length === 0) {
+    // Draw welcome text
+    ctx.fillStyle = 'rgba(0,212,255,0.15)';
+    ctx.font = 'bold 18px Amiri, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('أدخل دالة f(x) واضغط "ارسم الحجم الدوراني"', W/2, H/2);
+    return;
+  }
+
+  const c1 = hexRGB(colorTop), c2 = hexRGB(colorBot);
+  const numSteps = currentPoints.length;
+  const numSides = 48;
+
+  // Build quads
+  let quads = [];
+  for (let i = 0; i < numSteps - 1; i++) {
+    const r1 = currentPoints[i].r;
+    const r2 = currentPoints[i+1].r;
+    const xpos1 = currentPoints[i].x;
+    const xpos2 = currentPoints[i+1].x;
+    const t = i / (numSteps - 1);
+
+    for (let j = 0; j < numSides; j++) {
+      const a1 = (j / numSides) * Math.PI * 2;
+      const a2 = ((j+1) / numSides) * Math.PI * 2;
+
+      const p0 = project(xpos1, r1*Math.cos(a1), r1*Math.sin(a1));
+      const p1 = project(xpos1, r1*Math.cos(a2), r1*Math.sin(a2));
+      const p2 = project(xpos2, r2*Math.cos(a2), r2*Math.sin(a2));
+      const p3 = project(xpos2, r2*Math.cos(a1), r2*Math.sin(a1));
+
+      const depth = (p0.depth + p1.depth + p2.depth + p3.depth) / 4;
+
+      // Normal for lighting
+      const midAngle = (a1+a2)/2;
+      const nx = 0;
+      const ny = Math.cos(midAngle);
+      const nz = Math.sin(midAngle);
+      const light = 0.4 + 0.6 * Math.max(0, ny * 0.5 + nz * 0.3 + 0.5);
+
+      quads.push({ p0,p1,p2,p3, depth, t, light });
+    }
+  }
+
+  // Sort by depth (painter's algorithm)
+  quads.sort((a,b) => a.depth - b.depth);
+
+  for (const q of quads) {
+    ctx.beginPath();
+    ctx.moveTo(q.p0.sx, q.p0.sy);
+    ctx.lineTo(q.p1.sx, q.p1.sy);
+    ctx.lineTo(q.p2.sx, q.p2.sy);
+    ctx.lineTo(q.p3.sx, q.p3.sy);
+    ctx.closePath();
+
+    const cr = Math.round((c1.r + (c2.r-c1.r)*q.t) * q.light);
+    const cg = Math.round((c1.g + (c2.g-c1.g)*q.t) * q.light);
+    const cb = Math.round((c1.b + (c2.b-c1.b)*q.t) * q.light);
+    ctx.fillStyle = `rgba(${cr},${cg},${cb},${alpha})`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${cr},${cg},${cb},${alpha*0.3})`;
+    ctx.lineWidth = 0.3;
+    ctx.stroke();
+  }
+}
+
+function drawAxes() {
+  const axisLen = 2.5;
+  const axes = [
+    { from:[0,0,0], to:[axisLen,0,0], color:'#ff4444', label:'x' },
+    { from:[0,0,0], to:[0,axisLen,0], color:'#44ff44', label:'y' },
+    { from:[0,0,0], to:[0,0,axisLen], color:'#4488ff', label:'z' },
+  ];
+
+  for (const ax of axes) {
+    const p1 = project(...ax.from);
+    const p2 = project(...ax.to);
+    ctx.beginPath();
+    ctx.moveTo(p1.sx, p1.sy);
+    ctx.lineTo(p2.sx, p2.sy);
+    ctx.strokeStyle = ax.color;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([]);
+    ctx.stroke();
+
+    ctx.fillStyle = ax.color;
+    ctx.font = 'bold 14px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(ax.label, p2.sx, p2.sy - 8);
+  }
+}
+
+// ==================== Main Draw Function ====================
+function drawSolid() {
+  const funcStr = document.getElementById('funcInput').value;
+  const a = parseFloat(document.getElementById('aInput').value);
+  const b = parseFloat(document.getElementById('bInput').value);
+  const errEl = document.getElementById('errorMsg');
+  const volEl = document.getElementById('volumeResult');
+
+  errEl.style.display = 'none';
+
+  if (isNaN(a) || isNaN(b) || a >= b) {
+    errEl.textContent = '⚠ تأكد أن a < b وأن الحدود صحيحة';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  let f;
+  try { f = parseFunc(funcStr); } catch(e) {
+    errEl.textContent = '⚠ خطأ في كتابة الدالة';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // Test function
+  const test = f((a+b)/2);
+  if (isNaN(test)) {
+    errEl.textContent = '⚠ الدالة غير معرّفة في هذا النطاق';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // Calculate volume
+  const V = integrate(f, a, b);
+  volEl.textContent = `V = ${V.toFixed(4)} π ≈ ${(V).toFixed(4)}`;
+
+  // Actually compute with π
+  const Vpi = V;
+  volEl.textContent = `V ≈ ${Vpi.toFixed(4)}`;
+
+  // Generate points
+  currentPoints = [];
+  const range = b - a;
+  const cx = (a + b) / 2;
+
+  for (let i = 0; i <= slices; i++) {
+    const t = i / slices;
+    const xVal = a + t * range;
+    const yVal = Math.max(0, f(xVal));
+    // Normalize x to roughly [-2, 2] for display
+    const xDisplay = ((xVal - cx) / range) * 4;
+    currentPoints.push({ x: xDisplay, r: yVal, xVal });
+  }
+
+  // Auto-scale: find max radius
+  const maxR = Math.max(...currentPoints.map(p => p.r));
+  if (maxR > 0) {
+    const sc = 2 / maxR;
+    currentPoints = currentPoints.map(p => ({ ...p, r: p.r * sc }));
+  }
+
+  render();
+}
+
+function setPreset(fn, a, b) {
+  document.getElementById('funcInput').value = fn;
+  document.getElementById('aInput').value = a;
+  document.getElementById('bInput').value = b;
+  drawSolid();
+}
+
+function updateAlpha(v) {
+  alpha = parseFloat(v);
+  document.getElementById('alphaVal').textContent = v;
+  render();
+}
+
+function updateSlices(v) {
+  slices = parseInt(v);
+  document.getElementById('slicesVal').textContent = v;
+  if (currentPoints.length > 0) drawSolid();
+}
+
+function setColor(top, bot, el) {
+  colorTop = top; colorBot = bot;
+  document.querySelectorAll('.color-opt').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+// ==================== Init ====================
+resize();
+// Draw default on load
+setTimeout(() => drawSolid(), 100);
+</script>
+</body>
+</html>
